@@ -3,7 +3,7 @@ from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 from ui.make_ui import Ui_MainWindow
 from grades import Grades
-from file_ops import swap_single_file
+from file_ops import copy_student_by_sid
 from utils import *
 
 
@@ -64,39 +64,32 @@ class GraderUiDriver(Ui_MainWindow):
         self.redraw()
 
     def load(self):
-        # todo do we use the swap all method or rely on the files in the gradefile?
-        files = self.state.curr_data().get("files")
-        for file_name in files:
-            swap_single_file(file_name, self.state.source_path)
-
+        self.state.copy_current()
 
     def next(self):
         self.state.next()
         self.redraw()
 
-
     def prev(self):
         self.state.prev()
         self.redraw()
 
-
     def complete(self):
         m = self.state.curr_data().get("marked")
         self.state.curr_data()["marked"] = not m
-        print(self.state.curr_data()["marked"])
         self.redraw()
-
 
     def redraw(self):
         data = self.state.curr_data()
         # nameplate
         sid = self.state.cur_id()
+        full_name = self.state.curr_name()
         curr = self.state.curr
         total = self.state.total
         marked = "(Incomplete)"
         if data.get("marked"):
             marked = "(Complete)"
-        nameplate_str = f"{sid}\t{marked}\t({curr}/{total})"
+        nameplate_str = f"{sid}-{full_name} {marked}\t({curr}/{total})"
         self.nameplate.setText(nameplate_str)
         # comment
         self.comment_text.setPlainText(data.get("comments"))

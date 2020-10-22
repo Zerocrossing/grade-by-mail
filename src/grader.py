@@ -5,7 +5,7 @@ Mun AI Lab Grading tool
 import argparse
 import configparser
 from pathlib import Path
-from file_ops import initialize_assignment_directory, make_grade_template, swap_all_files_by_id, save_gradefile_to_txt
+from file_ops import initialize_assignment_directory, make_grade_template, copy_student_by_sid, save_gradefile_to_txt
 from grades import Grades
 from cli import mark_cli
 from utils import *
@@ -26,13 +26,13 @@ if __name__ == '__main__':
                         action="store_true",
                         help='Prints directories and debug info to console')
     parser.add_argument('-m', "--mark",
-                        action = "store_true",
+                        action="store_true",
                         help="Begin marking the assignment. Init must be called first.")
     parser.add_argument('-g', "--gui",
-                        action = "store_true",
+                        action="store_true",
                         help="Enables GUI for marking.")
     parser.add_argument('-w', "--write",
-                        action = "store_true",
+                        action="store_true",
                         help="Writes the contents of grades.json to a text file.")
     args = parser.parse_args()
     a_name = args.aname
@@ -75,17 +75,14 @@ if __name__ == '__main__':
             template_path = make_grade_template(data_dir)
         if args.template:
             template_path = make_grade_template(data_dir, template_directory=assignment_dir)
-        grades = Grades(gradefile_path,template_path, submissions_dir,source_dir, valid_filepaths=valid_paths)
-
-
+        grades = Grades(gradefile_path, template_path, submissions_dir, source_dir, student_dirs=valid_paths)
 
     if args.template and not args.init:
         make_grade_template(data_dir, template_directory=assignment_dir)
 
     if args.load:
         sid = args.load[0].lower()
-        swap_all_files_by_id(submissions_dir, sid, source_dir)
-
+        copy_student_by_sid(submissions_dir, sid, source_dir)
 
     if args.mark:
         # todo
@@ -94,6 +91,7 @@ if __name__ == '__main__':
         if args.gui:
             vprint("Marking with GUI")
             from ui.grader_ui_driver import GraderUiDriver, bind_window_and_run
+
             ui_driver = GraderUiDriver(grades)
             bind_window_and_run(ui_driver)
         else:
@@ -101,6 +99,6 @@ if __name__ == '__main__':
             mark_cli(grades)
     if args.write:
         vprint("Saving Gradefile to Text")
-        save_gradefile_to_txt(gradefile_path, data_dir/"grades.txt")
+        save_gradefile_to_txt(gradefile_path, data_dir / "grades.txt")
 
     vprint("Done.")

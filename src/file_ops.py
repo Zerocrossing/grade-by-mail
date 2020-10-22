@@ -10,45 +10,62 @@ from pathlib import Path
 from utils import *
 
 
+def parse_d2l(filename):
+    out = {}
+    reg = r'(.*) - (?P<sid>\w*)-(?P<name>.*) - (?P<date>.*, .{4}) (?P<time>.*)-(?P<fname>.*)'
+    match = re.search(reg, filename)
+    # parse time
+    if match is None:
+        return False
+    time = match.group("time").split()
+    hours = time[0][:-2]
+    minutes = time[0][-2:]
+    ampm = time[-1]
+    time = hours + ":" + minutes + " " + ampm
+    time_string = match.group("date") + ", " + time
+    date_format = '%b %d, %Y, %I:%M %p'
+    out["sid"] = match.group('sid')
+    out["full_name"] = match.group("name")
+    out["file_name"] = match.group('fname')
+    out["date"] = datetime.datetime.strptime(time_string, date_format)
+    return out
+
 def initialize_assignment_directory(submissions_path):
     """
     Scans through the submission directory
     Deletes duplicates based on submission date
     Prompts the user to delete submissions that don't conform to the D2L format
+    Returns a list of path objects to valid paths
     :type submissions_path: pathlib.Path
     """
     submissions = {}  # holds objects with datetime and filename
     invalid_paths = []
-    # this ugly regex parses download names from the D2L batch download
-    # todo move is_valid_d2l to new method for updating
-    reg = r'(.*) - (?P<sid>\w*)-(?P<name>.*) - (?P<date>.*, .{4}) (?P<time>.*)-(?P<fname>.*)'
     for f_path in submissions_path.iterdir():
-        match = re.search(reg, f_path.name)
         suffix = f_path.suffix
         if suffix is ".zip":
             # todo: handle unzipping
             pass
-        if match is None:
+        # parse d2l filename and get info
+        file_info = parse_d2l(f_path.name)
+        if not file_info: #files that don't conform to d2l formatting
             invalid_paths.append(f_path)
             continue
-        # format the time string for datetime to parse
-        time = match.group("time").split()
-        time = time[0] + ":" + time[1] + " " + time[2]
-        time_string = match.group("date") + ", " + time
-        date_format = '%b %d, %Y, %I:%M %p'
-        submission_date = datetime.datetime.strptime(time_string, date_format)
+        sid_name = file_info.get("sid")
+        student_name = file_info.get("full_name")
+        file_name = file_info.get("file_name")
+        submission_date = file_info.get("date")
+        sid_name = f"{sid_name} {student_name}" #used as a unique ID so we can access the name later
+
         # add file info to submissions
-        sid = match.group('sid')
-        file_name = match.group('fname')
-        if sid not in submissions:  # first time we see this student
-            submissions[sid] = {file_name: {"date": submission_date, "path": f_path}}
-        elif file_name not in submissions.get(sid):  # student seen, but new file
-            submissions[sid].update({file_name: {"date": submission_date, "path": f_path}})
+        if sid_name not in submissions:  # first time we see this student
+            submissions[sid_name] = {file_name: {"date": submission_date, "path": f_path}}
+        elif file_name not in submissions.get(sid_name):  # student seen, but new file
+            submissions[sid_name].update({file_name: {"date": submission_date, "path": f_path}})
         else:  # duplicate filename, check dates
-            prev_path = submissions.get(sid).get(file_name).get("path")
-            prev_date = submissions.get(sid).get(file_name).get("date")
+            prev_path = submissions.get(sid_name).get(file_name).get("path")
+            prev_date = submissions.get(sid_name).get(file_name).get("date")
             if prev_date < submission_date:  # new file was submitted later, update info and delete previous
-                submissions[sid][file_name] = {"date": submission_date, "path": f_path}
+                submissions[sid_name][file_name] = {"date": submission_date, "path": f_path}
                 vprint(
                     f"Deleting an old file because a newer one has been found:\n\tOld:\t{prev_path.name}\n\tNew:\t{f_path.name}")
                 prev_path.unlink()
@@ -56,15 +73,21 @@ def initialize_assignment_directory(submissions_path):
                 vprint(
                     f"Deleting an old file because a newer one already exists:\n\tOld:\t{f_path.name}\n\tNew:\t{prev_path.name}")
                 f_path.unlink()
-    valid_paths = []
-    # rename all valid, recent submissions
-    for sid, files in submissions.items():
+    student_dirs = []
+
+    # rename and move all valid, recent submissions
+    for sid_name, files in submissions.items():
         for f_name, data in files.items():
             path = data.get("path")
             parent = path.parent
-            new_path = parent / f"{sid} {f_name}"
+            student_dir = parent/sid_name
+            if not student_dir.is_dir():
+                student_dir.mkdir()
+            new_path = student_dir / f_name
             path.rename(new_path)
-            valid_paths.append(new_path)
+            if student_dir not in student_dirs:
+                student_dirs.append(student_dir)
+
     # prompt user to remove any invalid files
     if invalid_paths:
         print("Invalid filenames found: ")
@@ -73,8 +96,8 @@ def initialize_assignment_directory(submissions_path):
         if usrin.lower() == "y":
             print("Deleting")
             [x.unlink() for x in invalid_paths]
-    vprint(f"Initialization found {len(valid_paths)} valid filenames in the assignment directory")
-    return valid_paths
+    vprint(f"Initialization created {len(student_dirs)} submission directories in the assignment directory")
+    return student_dirs
 
 
 def _parse_template(t_path):
@@ -145,37 +168,54 @@ def make_grade_template(data_directory, template_directory=None):
     return template_path
 
 
-def swap_all_files_by_id(submissions_path, id, src_path):
-    """
-    copies all files prepended with the supplied ID to ./path/src
-    :type src_path: pathlib.Path
-    """
-    loaded = False
-    for f_path in submissions_path.iterdir():
-        f_name = f_path.name
-        f_id = f_path.name.lower().split()[0]
-        if f_id == id:
-            real_filename = f_name.replace(f_id, "").strip()
-            loaded = True
-            dst_path = src_path / real_filename
-            shutil.copy(f_path, dst_path)
-            vprint(f"Copied \n{f_name}\nTo:\n{dst_path.name}")
-    if not loaded:
-        raise Exception("No student files with that name found. Have you initialized the files?")
+# def swap_all_files_by_id(submissions_path, id, src_path):
+#     """
+#     copies all files prepended with the supplied ID to ./path/src
+#     :type src_path: pathlib.Path
+#     """
+#     loaded = False
+#     for f_path in submissions_path.iterdir():
+#         f_name = f_path.name
+#         f_id = f_path.name.lower().split()[0]
+#         if f_id == id:
+#             real_filename = f_name.replace(f_id, "").strip()
+#             loaded = True
+#             dst_path = src_path / real_filename
+#             shutil.copy(f_path, dst_path)
+#             vprint(f"Copied \n{f_name}\nTo:\n{dst_path.name}")
+#     if not loaded:
+#         raise Exception("No student files with that name found. Have you initialized the files?")
+#
+# def swap_single_file(file_path, dst_path):
+#     """
+#     :type file_path: pathlib.Path
+#     :type dst_path: pathlib.Path
+#     """
+#     # can handle strings
+#     if not isinstance(file_path, Path):
+#         file_path = Path(file_path)
+#     if not isinstance(dst_path, Path):
+#         file_path = Path(dst_path)
+#     sid, _, real_filename = file_path.name.partition(" ")
+#     shutil.copy(file_path, dst_path/ real_filename)
+#     vprint(f"Copied \n{file_path}\nTo:\n{dst_path}")
 
-def swap_single_file(file_path, dst_path):
+def copy_student_by_sid(submission_dir, sid, src_dir):
     """
-    :type file_path: pathlib.Path
-    :type dst_path: pathlib.Path
+    :type submission_dir: pathlib.Path
+    :type sid: pathlib.Path
     """
-    # can handle strings
-    if not isinstance(file_path, Path):
-        file_path = Path(file_path)
-    if not isinstance(dst_path, Path):
-        file_path = Path(dst_path)
-    sid, _, real_filename = file_path.name.partition(" ")
-    shutil.copy(file_path, dst_path/ real_filename)
-    vprint(f"Copied \n{file_path}\nTo:\n{dst_path}")
+    # find subdir
+    student_dir = None
+    for fpath in submission_dir.iterdir():
+        new_id, _, name = fpath.name.partition(" ")
+        if sid == new_id:
+            student_dir = fpath
+            break
+    for file in student_dir.iterdir():
+        shutil.copy(file, src_dir)
+        vprint(f"Copying {file.name} to {src_dir}")
+
 
 def save_gradefile_to_txt(gradefile_path, output_path):
     gradefile = json.load(gradefile_path.open('r'))
@@ -186,3 +226,4 @@ def save_gradefile_to_txt(gradefile_path, output_path):
         partners = data.get("partners")
     output_path.write_text(txt)
     #todo stopped here last night
+

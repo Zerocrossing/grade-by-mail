@@ -8,16 +8,18 @@ def cls():
 
 def grade_string(grades):
     """
+    Returns a nicely formatted string presenting all the grade info on the current student
     :type grades: grades.Grades
     """
     bar = "*" * 36 + '\n'
     data = grades.curr_data()
     sid = grades.cur_id()
+    full_name = grades.curr_name()
     status = "(incomplete)"
     if data.get("marked"):
         status = "(complete)"
     progress = f"{grades.curr}/{grades.total}"
-    nameplate = f"{sid}\t{status}\t{progress}"
+    nameplate = f"{sid}-{full_name} {status}\t{progress}"
     out = f"{bar}{nameplate}\n{bar}"
     out += "Grades:\n"
     for req, mark_obj in data.get("grade").items():
@@ -99,7 +101,7 @@ def mark_cli(grades):
         print_options()
         usrin = input()
         if usrin == 'l':
-            grades.load()
+            grades.copy_current()
             cls()
             input(f"Loaded files by {grades.cur_id()} to source directory. Enter to continue...")
         if usrin == 'g':
