@@ -70,7 +70,7 @@ if __name__ == '__main__':
         if not data_dir.exists():
             vprint(f"{data_dir} not found! Creating...")
             data_dir.mkdir()
-        valid_paths = initialize_assignment_directory(submissions_dir, config)
+        valid_paths = initialize_assignment_directory(submissions_dir)
         template_path = None
         if not args.template:
             template_path = make_grade_template(data_dir)
