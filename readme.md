@@ -21,12 +21,11 @@ Assignments
 
 The 'submissions' directory was not part of the assignment as downloaded, and instead is the output of the zip file of the batch download from d2l.
 This is important, as d2l names files using a specific convention that the grader uses to parse files.
-The assignment root folder, as well as the destination source folder must be set in `config.ini`.
+The assignment root folder, as well as the destination source folder must be set in `config.ini`. If the destination folder is simply the root of the assignment, you can leave src blank.
 
 ## Usage
 The first step is to run ```grader.py -i [assignment name]``` which will initialize the project.
-This step goes through the submissions directory, and renames every file from its d2l convention to simply `sid filename.ext`
-Where SID is the student id, followed by the name of the file as submitted.
+This step goes through the submissions directory, and puts every submission into a subdirectory named after the student who submitted it. Zip files are unzipped and placed in the same folder.
 In cases of duplicate submissions, the d2l filename includes the time of submission, and the initialization step will delete the older of any duplicate files.
 Afterwards, any files whose names did not meet the convention will be shown, with the option to delete. It is not nessecary to delete them, as the initialization step will keep all the valid filename stored in the local grades JSON.
 
