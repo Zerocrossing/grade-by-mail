@@ -12,8 +12,12 @@ def vprint(str):
     return
 
 
-def grade_to_str(sid, data):
-    s = f"{sid}:\n"
+def grade_to_str(sid, data, is_partner=False):
+    s = ""
+    if not is_partner:
+        s = f"{sid} {data.get('full_name')}:\n"
+    else:
+        s = f"{sid}:\n"
     for req, info in data.get("grade").items():
         s += f"{req}: {info.get('mark')}/{info.get('total')}\n"
     s += f"Comments:\n{data.get('comments')}\n"

@@ -192,6 +192,10 @@ def save_gradefile_to_txt(gradefile_path, output_path):
     for sid, data in gradefile.items():
         s = grade_to_str(sid, data)
         txt += s
-        partners = data.get("partners")
+        partners = data.get("partners").lower()
+        partners = partners.split(",")
+        for partner in partners:
+            p_id = partner.strip()
+            p_s = grade_to_str(p_id, data, is_partner=True)
+            txt += p_s
     output_path.write_text(txt)
-    # todo stopped here last night
