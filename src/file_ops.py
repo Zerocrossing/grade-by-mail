@@ -226,9 +226,10 @@ def save_gradefile_to_txt(gradefile_path, output_path):
         s = grade_to_str(sid, data)
         txt += s
         partners = data.get("partners").lower()
-        partners = partners.split(",")
-        for partner in partners:
-            p_id = partner.strip()
-            p_s = grade_to_str(p_id, data, is_partner=True)
-            txt += p_s
+        if partners is not "":
+            partners = partners.split(",")
+            for partner in partners:
+                p_id = partner.strip()
+                p_s = grade_to_str(p_id, data, is_partner=True)
+                txt += p_s
     output_path.write_text(txt)
