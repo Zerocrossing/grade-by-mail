@@ -107,13 +107,3 @@ class Grades:
             if data.get("marked"):
                 marked += 1
         return (marked / self.total) * 100
-
-
-if __name__ == '__main__':
-    p = Path("rwb95 config file.txt")
-    sid, _, f_name = p.name.partition(" ")
-    print(f"sid: {sid}\nfname: {f_name}")
-
-    # a_name = "a1backup"
-    # gfp = Path("../data/a1backup/grades.json")
-    # grades = Grades()

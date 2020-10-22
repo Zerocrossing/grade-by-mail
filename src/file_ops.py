@@ -30,6 +30,7 @@ def parse_d2l(filename):
     out["date"] = datetime.datetime.strptime(time_string, date_format)
     return out
 
+
 def initialize_assignment_directory(submissions_path):
     """
     Scans through the submission directory
@@ -47,14 +48,14 @@ def initialize_assignment_directory(submissions_path):
             pass
         # parse d2l filename and get info
         file_info = parse_d2l(f_path.name)
-        if not file_info: #files that don't conform to d2l formatting
+        if not file_info:  # files that don't conform to d2l formatting
             invalid_paths.append(f_path)
             continue
         sid_name = file_info.get("sid")
         student_name = file_info.get("full_name")
         file_name = file_info.get("file_name")
         submission_date = file_info.get("date")
-        sid_name = f"{sid_name} {student_name}" #used as a unique ID so we can access the name later
+        sid_name = f"{sid_name} {student_name}"  # used as a unique ID so we can access the name later
 
         # add file info to submissions
         if sid_name not in submissions:  # first time we see this student
@@ -80,7 +81,7 @@ def initialize_assignment_directory(submissions_path):
         for f_name, data in files.items():
             path = data.get("path")
             parent = path.parent
-            student_dir = parent/sid_name
+            student_dir = parent / sid_name
             if not student_dir.is_dir():
                 student_dir.mkdir()
             new_path = student_dir / f_name
@@ -168,38 +169,6 @@ def make_grade_template(data_directory, template_directory=None):
     return template_path
 
 
-# def swap_all_files_by_id(submissions_path, id, src_path):
-#     """
-#     copies all files prepended with the supplied ID to ./path/src
-#     :type src_path: pathlib.Path
-#     """
-#     loaded = False
-#     for f_path in submissions_path.iterdir():
-#         f_name = f_path.name
-#         f_id = f_path.name.lower().split()[0]
-#         if f_id == id:
-#             real_filename = f_name.replace(f_id, "").strip()
-#             loaded = True
-#             dst_path = src_path / real_filename
-#             shutil.copy(f_path, dst_path)
-#             vprint(f"Copied \n{f_name}\nTo:\n{dst_path.name}")
-#     if not loaded:
-#         raise Exception("No student files with that name found. Have you initialized the files?")
-#
-# def swap_single_file(file_path, dst_path):
-#     """
-#     :type file_path: pathlib.Path
-#     :type dst_path: pathlib.Path
-#     """
-#     # can handle strings
-#     if not isinstance(file_path, Path):
-#         file_path = Path(file_path)
-#     if not isinstance(dst_path, Path):
-#         file_path = Path(dst_path)
-#     sid, _, real_filename = file_path.name.partition(" ")
-#     shutil.copy(file_path, dst_path/ real_filename)
-#     vprint(f"Copied \n{file_path}\nTo:\n{dst_path}")
-
 def copy_student_by_sid(submission_dir, sid, src_dir):
     """
     :type submission_dir: pathlib.Path
@@ -225,5 +194,4 @@ def save_gradefile_to_txt(gradefile_path, output_path):
         txt += s
         partners = data.get("partners")
     output_path.write_text(txt)
-    #todo stopped here last night
-
+    # todo stopped here last night
