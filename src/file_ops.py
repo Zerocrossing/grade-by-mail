@@ -6,6 +6,7 @@ import re
 import datetime
 import json
 import shutil
+from zipfile import ZipFile
 from pathlib import Path
 from utils import *
 
@@ -43,9 +44,6 @@ def initialize_assignment_directory(submissions_path):
     invalid_paths = []
     for f_path in submissions_path.iterdir():
         suffix = f_path.suffix
-        if suffix is ".zip":
-            # todo: handle unzipping
-            pass
         # parse d2l filename and get info
         file_info = parse_d2l(f_path.name)
         if not file_info:  # files that don't conform to d2l formatting
@@ -86,7 +84,9 @@ def initialize_assignment_directory(submissions_path):
                 student_dir.mkdir()
             new_path = student_dir / f_name
             path.rename(new_path)
-            if student_dir not in student_dirs:
+            if path.suffix == ".zip":
+                _unzip_submission(new_path)
+            if student_dir not in student_dirs and student_dir.exists():
                 student_dirs.append(student_dir)
 
     # prompt user to remove any invalid files
@@ -101,6 +101,25 @@ def initialize_assignment_directory(submissions_path):
     return student_dirs
 
 
+def _unzip_submission(zip_path):
+    """
+    :type config: configparser.ConfigParser
+    :type zip_path: pathlib.Path
+    """
+    ensure_dir = config.getboolean("zip", "ensure_dir")
+    zip_dir = config.get("zip", "dir_name")
+    delete = config.getboolean("zip", "delete_zip")
+    zip = ZipFile(zip_path, 'r')
+    for file_name in zip.namelist():
+        if "/" not in file_name and ensure_dir:
+            zip.extract(file_name, zip_path.parent / zip_dir)
+        else:
+            zip.extract(file_name, zip_path.parent)
+    zip.close()
+    if delete:
+        zip_path.unlink()
+
+
 def _parse_template(t_path):
     """
     takes the grades template file and extracts the grade information
@@ -110,12 +129,15 @@ def _parse_template(t_path):
     :type t_path: pathlib.Path
     """
     template = {}
-    reg = r'(\d+)/\d+'
+    # reg = r'(\d+)/\d+'
+    reg = r'(.+)\s(\S+)\/(\d+)'
     for line in t_path.open("r"):
         res = re.search(reg, line)
         if res:
-            requirement = line[:res.start(0)].strip()
-            value = res.group(1)
+            requirement = res.group(1).strip()
+            if requirement[-1] == ':':
+                requirement = requirement[:-1]
+            value = res.group(3)
             template[requirement] = int(value)
     return template
 
@@ -171,6 +193,7 @@ def make_grade_template(data_directory, template_directory=None):
 
 def copy_student_by_sid(submission_dir, sid, src_dir):
     """
+    :type src_dir: pathlib.Path
     :type submission_dir: pathlib.Path
     :type sid: pathlib.Path
     """
@@ -181,9 +204,19 @@ def copy_student_by_sid(submission_dir, sid, src_dir):
         if sid == new_id:
             student_dir = fpath
             break
-    for file in student_dir.iterdir():
-        shutil.copy(file, src_dir)
-        vprint(f"Copying {file.name} to {src_dir}")
+    # recursively iter and copy all files to new directory
+    for path in student_dir.rglob('*'):
+        if path.is_dir():
+            continue
+        if config.get("copying", "ignore_dotfiles"):
+            if path.name[0] == '.':
+                continue
+        rel_path = path.relative_to(student_dir)
+        dst_path = src_dir / rel_path
+        if not dst_path.parent.exists():
+            dst_path.parent.mkdir()
+        vprint(f"Copying {path} to {dst_path}")
+        shutil.copy(path, dst_path)
 
 
 def save_gradefile_to_txt(gradefile_path, output_path):

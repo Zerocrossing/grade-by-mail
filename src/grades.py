@@ -9,7 +9,8 @@ from file_ops import copy_student_by_sid
 
 
 class Grades:
-    def __init__(self, gradefile_path, template_path, submissions_path, source_path, student_dirs=None):
+    def __init__(self, gradefile_path, template_path, submissions_path, source_path, student_dirs=None,
+                 force_remake=False):
         """
         Providing valid_filepaths (which are created during initialization) will allow unformatted files to exist in the
             submission directory without being considered. Otherwise all files are assumed to have been formatted
@@ -24,15 +25,15 @@ class Grades:
         self.source_path = source_path
         self.student_dirs = student_dirs
         self.data = {}
-        self.make_gradefile()
+        self.make_gradefile(force_remake)
         self.template = json.load(template_path.open('r'))
         # marking vars
         self.sids = list(self.data.keys())
-        self.total = len(self.sids)
+        self.total = len(self.sids) - 1
         self.curr = 0
 
-    def make_gradefile(self):
-        if self.gradefile_path.exists():
+    def make_gradefile(self, force_remake):
+        if self.gradefile_path.exists() and not force_remake:
             vprint(f"Loading gradefile from {self.gradefile_path}")
             self.data = json.load(self.gradefile_path.open('r'))
             return
@@ -52,7 +53,8 @@ class Grades:
         Assumes the path is a directory created by initialization
         :type path: pathlib.Path
         """
-        # vprint(f"Adding {path.name} to the grade file")
+        if not path.is_dir():
+            return
         sid, _, student_name = path.name.partition(" ")
         # first time seeing student
         if sid not in self.data:

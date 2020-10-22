@@ -34,12 +34,14 @@ if __name__ == '__main__':
     parser.add_argument('-w', "--write",
                         action="store_true",
                         help="Writes the contents of grades.json to a text file.")
+    parser.add_argument("--gradefile",
+                        action="store_true",
+                        help="Remakes the gradefile by scanning the submission directory looking for valid paths")
     args = parser.parse_args()
     a_name = args.aname
 
     # Config Values
-    config = configparser.ConfigParser()
-    config.read("config.ini")
+
     root_dir = Path(config.get("directories", "assignments"))
     assignment_dir = root_dir / a_name
     source_dir = assignment_dir / config.get('directories', 'source')
@@ -68,9 +70,8 @@ if __name__ == '__main__':
         if not data_dir.exists():
             vprint(f"{data_dir} not found! Creating...")
             data_dir.mkdir()
-        valid_paths = initialize_assignment_directory(submissions_dir)
+        valid_paths = initialize_assignment_directory(submissions_dir, config)
         template_path = None
-        # todo, check for pre-existing template file, or maybe create and 'update gradefile' method
         if not args.template:
             template_path = make_grade_template(data_dir)
         if args.template:
@@ -80,13 +81,15 @@ if __name__ == '__main__':
     if args.template and not args.init:
         make_grade_template(data_dir, template_directory=assignment_dir)
 
+    if args.gradefile:
+        grades = Grades(gradefile_path, template_path, submissions_dir, source_dir,
+                        force_remake=True)  # todo: check if remake works
+
     if args.load:
         sid = args.load[0].lower()
         copy_student_by_sid(submissions_dir, sid, source_dir)
 
     if args.mark:
-        # todo
-        print(f"Data type of template path: {template_path}, {type(template_path)}")
         grades = Grades(gradefile_path, template_path, submissions_dir, source_dir)
         if args.gui:
             vprint("Marking with GUI")
@@ -97,6 +100,7 @@ if __name__ == '__main__':
         else:
             vprint("Marking with CLI")
             mark_cli(grades)
+
     if args.write:
         vprint("Saving Gradefile to Text")
         out_file = data_dir / "grades.txt"

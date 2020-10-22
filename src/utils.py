@@ -1,4 +1,9 @@
+import configparser
+
+# evil globals and such
 verbose = False
+config = configparser.ConfigParser()
+config.read("config.ini")
 
 
 def set_verbose(bool):
