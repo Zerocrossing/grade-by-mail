@@ -1,3 +1,4 @@
+#!/bin/env python3
 """
 MAIL_GRADE
 Mun AI Lab Grading tool
