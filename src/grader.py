@@ -48,6 +48,7 @@ if __name__ == '__main__':
     submissions_dir = assignment_dir / config.get("directories", "submissions")
     data_dir = Path(config.get("directories", "data")) / a_name
     if not data_dir.exists():
+        data_dir.mkdir()
         vprint(f"{data_dir} not found! Creating...")
 
     # Arg paths

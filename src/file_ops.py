@@ -129,8 +129,8 @@ def _parse_template(t_path):
     :type t_path: pathlib.Path
     """
     template = {}
-    # reg = r'(\d+)/\d+'
     reg = r'(.+)\s(\S+)\/(\d+)'
+    # reg = r'^(\S.+)\s(\S+)\/(\d+)' # this line excludes lines that start with whitespace, ie 'sub-categories'
     for line in t_path.open("r"):
         res = re.search(reg, line)
         if res:
@@ -215,7 +215,7 @@ def copy_student_by_sid(submission_dir, sid, src_dir):
         dst_path = src_dir / rel_path
         if not dst_path.parent.exists():
             dst_path.parent.mkdir()
-        vprint(f"Copying {path} to {dst_path}")
+        vprint(f"Copying \n\t{path} to \n\t{dst_path}")
         shutil.copy(path, dst_path)
 
 

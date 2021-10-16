@@ -1,9 +1,12 @@
 import configparser
+import os
 
 # evil globals and such
 verbose = False
 config = configparser.ConfigParser()
-config.read("config.ini")
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+config.read("./config.ini")
+
 
 
 def set_verbose(bool):
@@ -31,6 +34,7 @@ def grade_to_str(sid, data, is_partner=False):
         total = info.get('total')
         # None is the default value, meaning this student hasn't been marked yet
         if mark is None:
+            continue
             mark = "??"
         if total is None:
             total = "??"
