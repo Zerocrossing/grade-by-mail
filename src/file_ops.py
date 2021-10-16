@@ -160,7 +160,7 @@ def make_grade_template(data_directory, template_directory=None):
     possible_templates = []
     for f_path in template_directory.iterdir():
         f_name = f_path.name.lower()
-        if f_name.lower().find("marks") is not -1:
+        if f_name.lower().find("marks") != -1:
             possible_templates.append(f_path)
     if not possible_templates:
         raise Exception("No marking scheme found! Directory must contain a file with the word 'marks'")
@@ -226,7 +226,7 @@ def save_gradefile_to_txt(gradefile_path, output_path):
         s = grade_to_str(sid, data)
         txt += s
         partners = data.get("partners").lower()
-        if partners is not "":
+        if partners != "":
             partners = partners.split(",")
             for partner in partners:
                 p_id = partner.strip()
