@@ -13,7 +13,7 @@ from utils import *
 
 def parse_d2l(filename):
     out = {}
-    reg = r'(.*) - (?P<sid>\w*)-(?P<name>.*) - (?P<date>.*, .{4}) (?P<time>.*)-(?P<fname>.*)'
+    reg = r'(.*) - (?P<sid>\w+)-(?P<name>.+) - (?P<date>.+, .{4}) (?P<time>[^-]+)-(?P<fname>.*)'
     match = re.search(reg, filename)
     # parse time
     if match is None:
