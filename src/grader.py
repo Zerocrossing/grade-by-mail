@@ -41,58 +41,36 @@ if __name__ == '__main__':
     args = parser.parse_args()
     a_name = args.aname
 
-    # Config Values
+    # Arg switches
+    # init initializes the assignment directory and creates a template file
 
-    root_dir = Path(config.get("directories", "assignments"))
-    assignment_dir = root_dir / a_name
-    source_dir = assignment_dir / config.get('directories', 'source')
-    submissions_dir = assignment_dir / config.get("directories", "submissions")
-    data_dir = Path(config.get("directories", "data")) / a_name
-    if not data_dir.exists():
-        data_dir.mkdir()
-        vprint(f"{data_dir} not found! Creating...")
-
-    # Arg paths
     if args.verbose:
         set_verbose(True)
-        vprint("Loading Directories from Config File: ")
-        vprint(f"\tRoot Directory: \t{root_dir}")
-        vprint(f"\tAssignment Directory: \t{assignment_dir}")
-        vprint(f"\tSource Directory: \t{source_dir}")
-        vprint(f"\tSubmissions Directory: \t{submissions_dir}")
-        vprint(f"\tLocal Data Directory: \t{data_dir}")
 
-    gradefile_path = data_dir / "grades.json"
-    template_path = data_dir / "marking_template.json"
-
-    # Init cleans the submission file directory, then makes a template and a gradefile
     if args.init:
         vprint(f"Initializing {a_name}")
-        template = args.template
-        if not data_dir.exists():
-            vprint(f"{data_dir} not found! Creating...")
-            data_dir.mkdir()
-        valid_paths = initialize_assignment_directory(submissions_dir)
-        template_path = None
-        if not args.template:
-            template_path = make_grade_template(data_dir)
+        initialize_assignment_directory(a_name)
         if args.template:
-            template_path = make_grade_template(data_dir, template_directory=assignment_dir)
-        grades = Grades(gradefile_path, template_path, submissions_dir, source_dir, student_dirs=valid_paths)
+            make_grade_template(a_name, gen_from_file=True)
+        else:
+            make_grade_template(a_name)
 
+    # if just template is called, it remakes the grading template file
+    #todo: if this is remade after the gradefile, it will probably be ignored
     if args.template and not args.init:
-        make_grade_template(data_dir, template_directory=assignment_dir)
+        make_grade_template(a_name, gen_from_file=True, remake=True)
 
     if args.gradefile:
-        grades = Grades(gradefile_path, template_path, submissions_dir, source_dir,
-                        force_remake=True)  # todo: check if remake works
+        Grades(a_name, force_remake=True)
 
     if args.load:
         sid = args.load[0].lower()
-        copy_student_by_sid(submissions_dir, sid, source_dir)
+        submission_path = Paths.get_submissions_path(a_name)
+        source_path = Paths.get_source_path(a_name)
+        copy_student_by_sid(submission_path, sid, source_path)
 
     if args.mark:
-        grades = Grades(gradefile_path, template_path, submissions_dir, source_dir)
+        grades = Grades(a_name)
         if args.gui:
             vprint("Marking with GUI")
             from ui.grader_ui_driver import GraderUiDriver, bind_window_and_run
@@ -105,7 +83,8 @@ if __name__ == '__main__':
 
     if args.write:
         vprint("Saving Gradefile to Text")
-        out_file = data_dir / "grades.txt"
+        out_file = Paths.get_data_path(a_name) / "grades.txt"
+        gradefile_path = Paths.get_gradefile_path(a_name)
         if out_file.exists():
             out_file.unlink()
         save_gradefile_to_txt(gradefile_path, out_file)

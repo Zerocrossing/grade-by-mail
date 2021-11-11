@@ -1,4 +1,5 @@
 import configparser
+from pathlib import Path
 import os
 
 # evil globals and such
@@ -6,12 +7,14 @@ verbose = False
 config = configparser.ConfigParser()
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 config.read("./config.ini")
-
+import paths as Paths
 
 
 def set_verbose(bool):
     global verbose
     verbose = bool
+    if bool:
+        print("Verbose mode enabled")
 
 
 def vprint(str):

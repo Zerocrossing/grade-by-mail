@@ -2,5 +2,6 @@ __pycache__
 
 .git
 .idea
+.vscode
 data
 venv

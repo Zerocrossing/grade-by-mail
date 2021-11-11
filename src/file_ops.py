@@ -32,14 +32,27 @@ def parse_d2l(filename):
     return out
 
 
-def initialize_assignment_directory(submissions_path):
+def initialize_assignment_directory(a_name):
     """
     Scans through the submission directory
     Deletes duplicates based on submission date
     Prompts the user to delete submissions that don't conform to the D2L format
     Returns a list of path objects to valid paths
     :type submissions_path: pathlib.Path
+    :type config: configparser.ConfigParser
     """
+    #setup paths to assignment directory
+    assignment_path = Paths.get_assignment_path(a_name)
+    submissions_path = Paths.get_submissions_path(a_name)
+    # setup paths for storing grade data
+    gradefile_path = Paths.get_gradefile_path(a_name)
+    template_path = Paths.get_marking_template_path(a_name)
+    data_path = Paths.get_data_path(a_name)
+    if not data_path.exists():
+        vprint(f"{data_path} not found! Creating...")
+        data_path.mkdir()
+    
+
     submissions = {}  # holds objects with datetime and filename
     invalid_paths = []
     for f_path in submissions_path.iterdir():
@@ -98,7 +111,6 @@ def initialize_assignment_directory(submissions_path):
             print("Deleting")
             [x.unlink() for x in invalid_paths]
     vprint(f"Initialization created {len(student_dirs)} submission directories in the assignment directory")
-    return student_dirs
 
 
 def _unzip_submission(zip_path):
@@ -142,23 +154,31 @@ def _parse_template(t_path):
     return template
 
 
-def make_grade_template(data_directory, template_directory=None):
+def make_grade_template(a_name, gen_from_file = False, remake = False):
     """
     given an assignment directory, looks for any files named "marks"
     prompts the user for which one, and calls parse_template to get a template dict
     template dict is written into the assignment directory as JSON
     :type data_directory: pathlib.Path
     """
+    data_directory = Paths.get_data_path(a_name)
+
     template = {"Grade": 100}
-    template_path = data_directory / "marking_template.json"
-    if template_directory is None:
+    template_path = Paths.get_marking_template_path(a_name)
+    template_text_dir = Paths.get_assignment_path(a_name)
+
+    if template_path.exists() and not remake:
+        vprint("Marking Template already exists, skipping creation")
+        return
+
+    if not template_path.exists() and not gen_from_file:
         vprint(f"Creating a default template in {template_path}")
         json.dump(template, template_path.open('w+'))
         return template_path
 
-    vprint(f"Looking for a marking template in {template_directory}")
+    vprint(f"Looking for a marking template in {template_text_dir}")
     possible_templates = []
-    for f_path in template_directory.iterdir():
+    for f_path in template_text_dir.iterdir():
         f_name = f_path.name.lower()
         if f_name.lower().find("marks") != -1:
             possible_templates.append(f_path)
