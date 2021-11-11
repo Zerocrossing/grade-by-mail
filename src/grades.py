@@ -5,7 +5,7 @@ A bit of a god class, it's a wrapper around the json gradefile
 from utils import *
 import json
 from pathlib import Path
-from file_ops import copy_student_by_sid
+from file_ops import copy_student_by_sid, restore_files
 
 
 class Grades:
@@ -15,17 +15,6 @@ class Grades:
         Creates grades object from config
         type config: configparser.ConfigParser()
         """
-        # root_path = Path(config.get("directories", "assignments"))
-        # assignment_path = root_path / assignment_name
-        # source_path = assignment_path / config.get('directories', 'source')
-        # submissions_path = assignment_path / config.get("directories", "submissions")
-        # data_path = Path(config.get("directories", "data")) / assignment_name
-        # if not data_path.exists():
-        #     data_path.mkdir()
-        #     vprint(f"{data_path} not found! Creating...")
-        # gradefile_path = data_path / "grades.json"
-        # template_path = data_path / "marking_template.json"
-
         self.assignment_name = assignment_name
         self.gradefile_path = Paths.get_gradefile_path(assignment_name)
         self.template_path = Paths.get_marking_template_path(assignment_name)
@@ -39,29 +28,6 @@ class Grades:
         self.sids = list(self.data.keys())
         self.total = len(self.sids) - 1
         self.curr = 0
-
-    # def __initold__(self, gradefile_path, template_path, submissions_path, source_path, student_dirs=None,
-    #              force_remake=False):
-    #     """
-    #     Providing valid_filepaths (which are created during initialization) will allow unformatted files to exist in the
-    #         submission directory without being considered. Otherwise all files are assumed to have been formatted
-    #         by initialize_assignment_directory in file_ops.py
-    #     :type submissions_path: pathlib.Path
-    #     :type template_path: pathlib.Path
-    #     :type gradefile_path: pathlib.Path
-    #     """
-    #     self.gradefile_path = gradefile_path
-    #     self.template_path = template_path
-    #     self.submissions_path = submissions_path
-    #     self.source_path = source_path
-    #     self.student_dirs = student_dirs
-    #     self.data = {}
-    #     self.make_gradefile(force_remake)
-    #     self.template = json.load(template_path.open('r'))
-    #     # marking vars
-    #     self.sids = list(self.data.keys())
-    #     self.total = len(self.sids) - 1
-    #     self.curr = 0
 
     def make_gradefile(self, force_remake):
         if self.gradefile_path.exists() and not force_remake:
@@ -110,6 +76,10 @@ class Grades:
     def load(self):
         vprint(f"Loading gradefile from {self.gradefile_path}")
         self.data = json.load(self.gradefile_path.open('r'))
+    
+    def restore(self):
+        vprint("Restoring all files from restore directory")
+        restore_files(self.restore_path, self.source_path)
 
     def copy_current(self):
         copy_student_by_sid(self.submissions_path, self.cur_id(), self.source_path)

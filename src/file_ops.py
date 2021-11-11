@@ -238,6 +238,26 @@ def copy_student_by_sid(submission_dir, sid, src_dir):
         vprint(f"Copying \n\t{path} to \n\t{dst_path}")
         shutil.copy(path, dst_path)
 
+def restore_files(restore_path, source_path):
+    """
+    type restore_path: pathlib.Path
+    type source_path: pathlib.Path
+    """
+    # copy all files from restore path to source path
+    if not restore_path.exists():
+        print("Restore path does not exist!")
+        return
+    for path in restore_path.rglob('*'):
+        if path.is_dir():
+            continue
+        rel_path = path.relative_to(restore_path)
+        dst_path = source_path / rel_path
+        if not dst_path.parent.exists():
+            dst_path.parent.mkdir()
+        vprint(f"Copying \n\t{path} to \n\t{dst_path}")
+        shutil.copy(path, dst_path)
+    
+
 
 def save_gradefile_to_txt(gradefile_path, output_path):
     gradefile = json.load(gradefile_path.open('r'))

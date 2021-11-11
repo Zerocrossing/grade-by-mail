@@ -1,4 +1,5 @@
 import os
+from grades import Grades
 from utils import *
 
 
@@ -9,7 +10,7 @@ def cls():
 def grade_string(grades):
     """
     Returns a nicely formatted string presenting all the grade info on the current student
-    :type grades: grades.Grades
+    :type grades: Grades
     """
     bar = "*" * 36 + '\n'
     data = grades.curr_data()
@@ -37,6 +38,7 @@ def print_options():
     print("""
 Select an Option:
     l: load files
+    r: restore files
     s: save to disk
     g: edit grades
     p: edit partner
@@ -95,6 +97,9 @@ def edit_grades(grades):
 
 
 def mark_cli(grades):
+    """
+    type grades: Grades
+    """
     while (True):
         cls()
         print(grade_string(grades))
@@ -104,6 +109,10 @@ def mark_cli(grades):
             grades.copy_current()
             cls()
             input(f"Loaded files by {grades.cur_id()} to source directory. Enter to continue...")
+        if usrin == 'r':
+            grades.restore()
+            cls()
+            input(f"Copied all files from->to: \n\t{grades.restore_path}\n\t{grades.source_path}\nEnter to continue...")
         if usrin == 'g':
             edit_grades(grades)
         if usrin == 's':

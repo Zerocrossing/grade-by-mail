@@ -17,7 +17,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(711, 655)
+        MainWindow.resize(1041, 823)
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -116,12 +116,6 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addLayout(self.partner_layout)
 
-        self.btn_load = QPushButton(self.centralwidget)
-        self.btn_load.setObjectName(u"btn_load")
-        self.btn_load.setFont(font)
-
-        self.verticalLayout.addWidget(self.btn_load)
-
         self.btns_layout = QHBoxLayout()
         self.btns_layout.setObjectName(u"btns_layout")
         self.btn_prev = QPushButton(self.centralwidget)
@@ -145,6 +139,28 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addLayout(self.btns_layout)
 
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setSpacing(6)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
+        self.horizontalLayout.setContentsMargins(0, -1, -1, -1)
+        self.btn_restore = QPushButton(self.centralwidget)
+        self.btn_restore.setObjectName(u"btn_restore")
+        self.btn_restore.setEnabled(True)
+        self.btn_restore.setFont(font)
+
+        self.horizontalLayout.addWidget(self.btn_restore)
+
+        self.btn_load = QPushButton(self.centralwidget)
+        self.btn_load.setObjectName(u"btn_load")
+        self.btn_load.setEnabled(True)
+        self.btn_load.setFont(font)
+
+        self.horizontalLayout.addWidget(self.btn_load)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout)
+
         self.btn_complete = QPushButton(self.centralwidget)
         self.btn_complete.setObjectName(u"btn_complete")
         self.btn_complete.setFont(font)
@@ -164,7 +180,7 @@ class Ui_MainWindow(object):
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
         self.menubar.setEnabled(True)
-        self.menubar.setGeometry(QRect(0, 0, 711, 21))
+        self.menubar.setGeometry(QRect(0, 0, 1041, 21))
         self.menuasdf = QMenu(self.menubar)
         self.menuasdf.setObjectName(u"menuasdf")
         MainWindow.setMenuBar(self.menubar)
@@ -188,10 +204,11 @@ class Ui_MainWindow(object):
         self.req_label.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
         self.total_label.setText(QCoreApplication.translate("MainWindow", u"/100", None))
         self.partnerLabel.setText(QCoreApplication.translate("MainWindow", u"Partner", None))
-        self.btn_load.setText(QCoreApplication.translate("MainWindow", u"LOAD", None))
         self.btn_prev.setText(QCoreApplication.translate("MainWindow", u"Previous", None))
         self.btn_save.setText(QCoreApplication.translate("MainWindow", u"Save", None))
         self.btn_next.setText(QCoreApplication.translate("MainWindow", u"Next", None))
+        self.btn_restore.setText(QCoreApplication.translate("MainWindow", u"RESTORE", None))
+        self.btn_load.setText(QCoreApplication.translate("MainWindow", u"LOAD", None))
         self.btn_complete.setText(QCoreApplication.translate("MainWindow", u"Toggle Complete", None))
         self.menuasdf.setTitle(QCoreApplication.translate("MainWindow", u"Grader", None))
     # retranslateUi

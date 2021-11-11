@@ -1,7 +1,7 @@
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
-from ui.make_ui import Ui_MainWindow
+from ui.Ui_grader import Ui_MainWindow
 from grades import Grades
 from file_ops import copy_student_by_sid
 from utils import *
@@ -43,6 +43,7 @@ class GraderUiDriver(Ui_MainWindow):
 
     def bind_buttons(self):
         self.btn_load.clicked.connect(self.load)
+        self.btn_restore.clicked.connect(self.restore)
         self.btn_prev.clicked.connect(self.prev)
         self.btn_next.clicked.connect(self.next)
         self.btn_save.clicked.connect(self.save)
@@ -65,6 +66,9 @@ class GraderUiDriver(Ui_MainWindow):
 
     def load(self):
         self.state.copy_current()
+
+    def restore(self):
+        self.state.restore()
 
     def next(self):
         self.state.next()
