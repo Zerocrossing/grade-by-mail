@@ -5,18 +5,26 @@ from utils import *
 import shutil
 import argparse
 
-RESTORE_DIR = "testa3"
+RESTORE_DIR = "restore_test"
 
-def restore_test(test_path):
+def restore_test(test_name):
     """
     Places the contents of ./data into the assignment directory
     Deletes all files that may have existed there previously
+    Also clears any local data directory with the same name
     """
-    restore_dir = Path(config.get("directories", "data")) / test_path
-    copy_dir = Path(config.get("directories", "assignments")) / test_path
+    restore_dir = Path(config.get("directories", "data")) / test_name
+    copy_dir = Path(config.get("directories", "assignments")) / "test"
     if copy_dir.exists():
         shutil.rmtree(copy_dir)
     shutil.copytree(restore_dir, copy_dir)
+    #delete local test directory
+    local_dir = Path(config.get("directories", "data")) / "test"
+    if local_dir.exists():
+        shutil.rmtree(local_dir)
+        
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

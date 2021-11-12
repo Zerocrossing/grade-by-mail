@@ -48,7 +48,7 @@ if __name__ == '__main__':
         set_verbose(True)
 
     if args.init:
-        vprint(f"Initializing {a_name}")
+        banner_print("Initializing")
         initialize_assignment_directory(a_name)
         if args.template:
             make_grade_template(a_name, gen_from_file=True)
@@ -70,6 +70,7 @@ if __name__ == '__main__':
         copy_student_by_sid(submission_path, sid, source_path)
 
     if args.mark:
+        banner_print("Marking")
         grades = Grades(a_name)
         if args.gui:
             vprint("Marking with GUI")

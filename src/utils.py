@@ -22,6 +22,15 @@ def vprint(str):
         print(str)
     return
 
+def banner_print(str, char="*"):
+    print('\n'+char*(len(str)+2))
+    print(f"{str}".center(len(str)+2, char))
+    print(char*(len(str)+2)+'\n')
+
+def vbanner_print(str, char="*"):
+    if verbose:
+        banner_print(str, char)
+    return
 
 def grade_to_str(sid, data, is_partner=False):
     s = ""

@@ -31,6 +31,26 @@ def parse_d2l(filename):
     out["date"] = datetime.datetime.strptime(time_string, date_format)
     return out
 
+def _look_for_submission_zip(zip_path, dest_path):
+    """
+    Scans the directory looking for a zip file with 'download' , 'assignment' or 'submission' in the name
+    Extracts the zip file to the destination path
+    :type path: pathlib.Path
+    """
+    for fpath in zip_path.iterdir():
+        if fpath.is_dir() or fpath.suffix != ".zip":
+            continue
+        matches = ["assignment", "download", "submission"]
+        if any(x in fpath.name.lower() for x in matches):
+            #unzip to destination
+            vprint(f"Unzipping:\n\tsrc: {fpath}\n\tdst: {dest_path}")
+            # vprint(f"Found submission zip file:\n{fpath}\nextracting to\n{dest_path}")
+            zip_file = ZipFile(fpath, 'r')
+            zip_file.extractall(dest_path)
+            return True
+    return False
+
+
 
 def initialize_assignment_directory(a_name):
     """
@@ -48,13 +68,20 @@ def initialize_assignment_directory(a_name):
     gradefile_path = Paths.get_gradefile_path(a_name)
     template_path = Paths.get_marking_template_path(a_name)
     data_path = Paths.get_data_path(a_name)
+
+    # create local data path for grades
     if not data_path.exists():
-        vprint(f"{data_path} not found! Creating...")
+        vprint(f"Creating data path in {data_path}")
         data_path.mkdir()
     
+    # check for a zip file
+    if not submissions_path.exists():
+        zip_found = _look_for_submission_zip(assignment_path, submissions_path)
+
 
     submissions = {}  # holds objects with datetime and filename
     invalid_paths = []
+    vprint("Deleting duplicate files...")
     for f_path in submissions_path.iterdir():
         suffix = f_path.suffix
         # parse d2l filename and get info
@@ -79,11 +106,11 @@ def initialize_assignment_directory(a_name):
             if prev_date < submission_date:  # new file was submitted later, update info and delete previous
                 submissions[sid_name][file_name] = {"date": submission_date, "path": f_path}
                 vprint(
-                    f"Deleting an old file because a newer one has been found:\n\tOld:\t{prev_path.name}\n\tNew:\t{f_path.name}")
+                    f"\tOld:\t{prev_path.name}\n\tNew:\t{f_path.name}\n")
                 prev_path.unlink()
             else:  # new file is older, delete it
                 vprint(
-                    f"Deleting an old file because a newer one already exists:\n\tOld:\t{f_path.name}\n\tNew:\t{prev_path.name}")
+                    f"\tOld:\t{f_path.name}\n\tNew:\t{prev_path.name}\n")
                 f_path.unlink()
     student_dirs = []
 
@@ -106,7 +133,7 @@ def initialize_assignment_directory(a_name):
     if invalid_paths:
         print("Invalid filenames found: ")
         [print(f"\t{x.name}") for x in invalid_paths]
-        usrin = input("Do you want to delete these files? y/n")
+        usrin = input("Do you want to delete these files? y/n ")
         if usrin.lower() == "y":
             print("Deleting")
             [x.unlink() for x in invalid_paths]
