@@ -81,6 +81,7 @@ class GraderUiDriver(Ui_MainWindow):
     def complete(self):
         m = self.state.curr_data().get("marked")
         self.state.curr_data()["marked"] = not m
+        self.save()
         self.redraw()
 
     def redraw(self):
@@ -93,7 +94,7 @@ class GraderUiDriver(Ui_MainWindow):
         marked = "(Incomplete)"
         if data.get("marked"):
             marked = "(Complete)"
-        nameplate_str = f"{sid}-{full_name} {marked}\t({curr}/{total})"
+        nameplate_str = f"{sid}-{full_name} {marked}\t({curr+1}/{total+1})"
         self.nameplate.setText(nameplate_str)
         # comment
         self.comment_text.setPlainText(data.get("comments"))

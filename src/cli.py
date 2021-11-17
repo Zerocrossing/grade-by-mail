@@ -19,7 +19,7 @@ def grade_string(grades):
     status = "(incomplete)"
     if data.get("marked"):
         status = "(complete)"
-    progress = f"{grades.curr}/{grades.total}"
+    progress = f"{grades.curr+1}/{grades.total+1}"
     nameplate = f"{sid}-{full_name} {status}\t{progress}"
     out = f"{bar}{nameplate}\n{bar}"
     out += "Grades:\n"

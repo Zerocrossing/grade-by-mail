@@ -117,4 +117,5 @@ class Grades:
         for sid, data in self.data.items():
             if data.get("marked"):
                 marked += 1
-        return (marked / self.total) * 100
+        val = (marked / (self.total+1)) * 100
+        return val
