@@ -39,7 +39,8 @@ class Grades:
             for f_path in self.student_dirs:
                 self.add_path_to_data(f_path)
         else:
-            vprint(f"Making grade file for all files in {self.submissions_path}")
+            vprint(
+                f"Making grade file for all files in {self.submissions_path}")
             for f_path in self.submissions_path.iterdir():
                 self.add_path_to_data(f_path)
         self.save()
@@ -65,7 +66,8 @@ class Grades:
             }
             template = json.load(self.template_path.open('r'))
             for requirement, value in template.items():
-                self.data[sid]["grade"][requirement] = {"mark": None, "total": value}
+                self.data[sid]["grade"][requirement] = {
+                    "mark": None, "total": value}
         for file in path.iterdir():
             self.data[sid]["files"].append(str(file))
 
@@ -76,13 +78,15 @@ class Grades:
     def load(self):
         vprint(f"Loading gradefile from {self.gradefile_path}")
         self.data = json.load(self.gradefile_path.open('r'))
-    
+
     def restore(self):
-        vprint("Restoring all files from restore directory")
-        restore_files(self.restore_path, self.source_path)
+        vprint(
+            f"Restoring all files from {self.restore_path} to  {self.source_path}")
+        restore_files(self.assignment_name)
 
     def copy_current(self):
-        copy_student_by_sid(self.submissions_path, self.cur_id(), self.source_path)
+        copy_student_by_sid(self.submissions_path,
+                            self.cur_id(), self.source_path)
 
     def cur_id(self):
         return self.sids[self.curr]

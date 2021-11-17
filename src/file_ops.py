@@ -31,6 +31,7 @@ def parse_d2l(filename):
     out["date"] = datetime.datetime.strptime(time_string, date_format)
     return out
 
+
 def _look_for_submission_zip(zip_path, dest_path):
     """
     Scans the directory looking for a zip file with 'download' , 'assignment' or 'submission' in the name
@@ -42,7 +43,7 @@ def _look_for_submission_zip(zip_path, dest_path):
             continue
         matches = ["assignment", "download", "submission"]
         if any(x in fpath.name.lower() for x in matches):
-            #unzip to destination
+            # unzip to destination
             vprint(f"Unzipping:\n\tsrc: {fpath}\n\tdst: {dest_path}")
             # vprint(f"Found submission zip file:\n{fpath}\nextracting to\n{dest_path}")
             zip_file = ZipFile(fpath, 'r')
@@ -51,36 +52,54 @@ def _look_for_submission_zip(zip_path, dest_path):
     return False
 
 
-
 def initialize_assignment_directory(a_name):
     """
+    Creates the grader directory and subdirectories from config paths
     Scans through the submission directory
     Deletes duplicates based on submission date
     Prompts the user to delete submissions that don't conform to the D2L format
-    Returns a list of path objects to valid paths
     :type submissions_path: pathlib.Path
     :type config: configparser.ConfigParser
     """
-    #setup paths to assignment directory
+    # setup top level paths
     assignment_path = Paths.get_assignment_path(a_name)
+    grader_path = Paths.get_grader_path(a_name)
     submissions_path = Paths.get_submissions_path(a_name)
-    # setup paths for storing grade data
+    source_path = Paths.get_source_path(a_name)
+    restore_path = Paths.get_restore_path(a_name)
+
+    if not assignment_path.exists():
+        raise FileNotFoundError(
+            f"Assignment directory {assignment_path} does not exist")
+
+    if not grader_path.exists():
+        vprint(f"Making directory {grader_path}")
+        grader_path.mkdir()
+
+    # setup restore path
+    make_restore_path(a_name)
+
+    if not submissions_path.exists():
+        vprint(f"Making directory {submissions_path}")
+        submissions_path.mkdir()
+
+    # setup grades path and subpaths for files in it
+    grades_path = Paths.get_grades_path(a_name)
+    if not grades_path.exists():
+        vprint(f"Making directory {grades_path}")
+        grades_path.mkdir()
+
     gradefile_path = Paths.get_gradefile_path(a_name)
     template_path = Paths.get_marking_template_path(a_name)
-    data_path = Paths.get_data_path(a_name)
 
-    # create local data path for grades
-    if not data_path.exists():
-        vprint(f"Creating data path in {data_path}")
-        data_path.mkdir()
-    
-    # check for a zip file
-    if not submissions_path.exists():
-        zip_found = _look_for_submission_zip(assignment_path, submissions_path)
-
+    # check for a zip file for submissions
+    zip_found = _look_for_submission_zip(assignment_path, submissions_path)
+    if not zip_found:
+        raise FileNotFoundError(f"No D2L zip file found in {assignment_path}")
 
     submissions = {}  # holds objects with datetime and filename
     invalid_paths = []
+
     vprint("Deleting duplicate files...")
     for f_path in submissions_path.iterdir():
         suffix = f_path.suffix
@@ -93,18 +112,23 @@ def initialize_assignment_directory(a_name):
         student_name = file_info.get("full_name")
         file_name = file_info.get("file_name")
         submission_date = file_info.get("date")
-        sid_name = f"{sid_name} {student_name}"  # used as a unique ID so we can access the name later
+        # used as a unique ID so we can access the name later
+        sid_name = f"{sid_name} {student_name}"
 
         # add file info to submissions
         if sid_name not in submissions:  # first time we see this student
-            submissions[sid_name] = {file_name: {"date": submission_date, "path": f_path}}
-        elif file_name not in submissions.get(sid_name):  # student seen, but new file
-            submissions[sid_name].update({file_name: {"date": submission_date, "path": f_path}})
+            submissions[sid_name] = {file_name: {
+                "date": submission_date, "path": f_path}}
+        # student seen, but new file
+        elif file_name not in submissions.get(sid_name):
+            submissions[sid_name].update(
+                {file_name: {"date": submission_date, "path": f_path}})
         else:  # duplicate filename, check dates
             prev_path = submissions.get(sid_name).get(file_name).get("path")
             prev_date = submissions.get(sid_name).get(file_name).get("date")
             if prev_date < submission_date:  # new file was submitted later, update info and delete previous
-                submissions[sid_name][file_name] = {"date": submission_date, "path": f_path}
+                submissions[sid_name][file_name] = {
+                    "date": submission_date, "path": f_path}
                 vprint(
                     f"\tOld:\t{prev_path.name}\n\tNew:\t{f_path.name}\n")
                 prev_path.unlink()
@@ -137,7 +161,30 @@ def initialize_assignment_directory(a_name):
         if usrin.lower() == "y":
             print("Deleting")
             [x.unlink() for x in invalid_paths]
-    vprint(f"Initialization created {len(student_dirs)} submission directories in the assignment directory")
+    vprint(
+        f"Initialization created {len(student_dirs)} submission directories in the assignment directory")
+
+
+def make_restore_path(a_name):
+    """
+    Creates the restore path if it doesn't exist
+    :param source_path: pathlib.Path
+    :param restore_path: pathlib.Path
+    """
+    if not config.getboolean("grading", "create_restore_dir"):
+        vprint(f"Skipping restore directory creation")
+        return
+
+    restore_source_path = Paths.get_restore_source_path(a_name)
+    restore_path = Paths.get_restore_path(a_name)
+
+    if not restore_source_path.exists():
+        raise FileNotFoundError(f"{restore_source_path} does not exist")
+
+    if restore_path.exists():
+        raise FileExistsError("{restore_path} Already exists")
+
+    shutil.copytree(restore_source_path, restore_path)
 
 
 def _unzip_submission(zip_path):
@@ -181,17 +228,16 @@ def _parse_template(t_path):
     return template
 
 
-def make_grade_template(a_name, gen_from_file = False, remake = False):
+def make_grade_template(a_name, gen_from_file=False, remake=False):
     """
     given an assignment directory, looks for any files named "marks"
     prompts the user for which one, and calls parse_template to get a template dict
     template dict is written into the assignment directory as JSON
     :type data_directory: pathlib.Path
     """
-    data_directory = Paths.get_data_path(a_name)
-
     template = {"Grade": 100}
     template_path = Paths.get_marking_template_path(a_name)
+    # path to scan for a grade template .txt file
     template_text_dir = Paths.get_assignment_path(a_name)
 
     if template_path.exists() and not remake:
@@ -210,7 +256,8 @@ def make_grade_template(a_name, gen_from_file = False, remake = False):
         if f_name.lower().find("marks") != -1:
             possible_templates.append(f_path)
     if not possible_templates:
-        raise Exception("No marking scheme found! Directory must contain a file with the word 'marks'")
+        raise Exception(
+            "No marking scheme found! Directory must contain a file with the word 'marks'")
     in_bad = True
     template = {}
     while (in_bad):
@@ -231,7 +278,6 @@ def make_grade_template(a_name, gen_from_file = False, remake = False):
                 in_bad = False
                 t_path = possible_templates[choice - 1]
                 template = _parse_template(t_path)
-    template_path = data_directory / "marking_template.json"
     print("Template created:")
     [print(f"\t{k}: {v}%") for k, v in template.items()]
     json.dump(template, template_path.open('w+'))
@@ -265,11 +311,15 @@ def copy_student_by_sid(submission_dir, sid, src_dir):
         vprint(f"Copying \n\t{path} to \n\t{dst_path}")
         shutil.copy(path, dst_path)
 
-def restore_files(restore_path, source_path):
+
+def restore_files(a_name):
     """
     type restore_path: pathlib.Path
     type source_path: pathlib.Path
     """
+    restore_path = Paths.get_restore_path(a_name)
+    source_path = Paths.get_restore_source_path(a_name)
+
     # copy all files from restore path to source path
     if not restore_path.exists():
         print("Restore path does not exist!")
@@ -283,7 +333,6 @@ def restore_files(restore_path, source_path):
             dst_path.parent.mkdir()
         vprint(f"Copying \n\t{path} to \n\t{dst_path}")
         shutil.copy(path, dst_path)
-    
 
 
 def save_gradefile_to_txt(gradefile_path, output_path):
