@@ -81,6 +81,7 @@ class GraderUiDriver(Ui_MainWindow):
     def complete(self):
         m = self.state.curr_data().get("marked")
         self.state.curr_data()["marked"] = not m
+        self.save()
         self.redraw()
 
     def redraw(self):
