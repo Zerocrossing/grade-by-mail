@@ -23,9 +23,10 @@ def vprint(str):
     return
 
 def banner_print(str, char="*"):
-    print('\n'+char*(len(str)+2))
-    print(f"{str}".center(len(str)+2, char))
-    print(char*(len(str)+2)+'\n')
+    print('\n'+char*(len(str)+4))
+    title = str.center(len(str)+2)
+    print(f"{title}".center(len(str)+4, char))
+    print(char*(len(str)+4)+'\n')
 
 def vbanner_print(str, char="*"):
     if verbose:

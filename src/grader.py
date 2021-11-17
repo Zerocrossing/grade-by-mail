@@ -83,11 +83,11 @@ if __name__ == '__main__':
             mark_cli(grades)
 
     if args.write:
-        vprint("Saving Gradefile to Text")
-        out_file = Paths.get_data_path(a_name) / "grades.txt"
         gradefile_path = Paths.get_gradefile_path(a_name)
-        if out_file.exists():
-            out_file.unlink()
-        save_gradefile_to_txt(gradefile_path, out_file)
+        grades_path = gradefile_path.parent / "grades.txt"
+        banner_print("Writing Output File")
+        if grades_path.exists():
+            grades_path.unlink()
+        save_gradefile_to_txt(gradefile_path, grades_path)
 
     vprint("Done.")
