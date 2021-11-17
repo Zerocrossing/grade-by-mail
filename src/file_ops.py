@@ -2,6 +2,7 @@
 File Operations
 Saving, Loading, and Parsing local storage
 """
+from os import mkdir
 import re
 import datetime
 import json
@@ -296,19 +297,25 @@ def copy_student_by_sid(submission_dir, sid, src_dir):
         new_id, _, name = fpath.name.partition(" ")
         if sid == new_id:
             student_dir = fpath
-            break
+            break 
+
     # recursively iter and copy all files to new directory
     for path in student_dir.rglob('*'):
-        if path.is_dir():
+        if config.get("copying", "ignore_dotfiles") and path.name[0] == '.':
             continue
-        if config.get("copying", "ignore_dotfiles"):
-            if path.name[0] == '.':
-                continue
         rel_path = path.relative_to(student_dir)
         dst_path = src_dir / rel_path
-        if not dst_path.parent.exists():
-            dst_path.parent.mkdir()
-        vprint(f"Copying \n\t{path} to \n\t{dst_path}")
+        # directories
+        if path.is_dir():
+            if dst_path.exists():
+                vprint(f"{dst_path} already exists, skipping")
+                continue      
+            else:      
+                vprint(f"Creating directory {dst_path}")
+                dst_path.mkdir()
+                continue
+        # files
+        vprint(f"Copying \n\t{path.relative_to(src_dir)} to \n\t{dst_path.relative_to(src_dir)}")
         shutil.copy(path, dst_path)
 
 

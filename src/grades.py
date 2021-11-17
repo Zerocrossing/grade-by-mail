@@ -17,7 +17,8 @@ class Grades:
         """
         self.grader_path = Paths.get_grader_path(assignment_name)
         if not self.grader_path.exists():
-            print("ERROR: No grader directory exists. Ensure you run initialization before attempting to mark.\n")
+            print(
+                "ERROR: No grader directory exists. Ensure you run initialization before attempting to mark.\n")
             raise FileNotFoundError(self.grader_path)
         self.assignment_name = assignment_name
         self.gradefile_path = Paths.get_gradefile_path(assignment_name)
@@ -46,34 +47,35 @@ class Grades:
             vprint(
                 f"Making grade file for all files in {self.submissions_path}")
             for f_path in self.submissions_path.iterdir():
-                self.add_path_to_data(f_path)
+                self.add_submission_path(f_path)
+                # self.add_path_to_data(f_path)
         self.save()
 
-    def add_path_to_data(self, path):
+    def add_submission_path(self, submission_path):
         """
-        Adds the given path to the gradedata file
-        Assumes the path is a directory created by initialization
-        :type path: pathlib.Path
+        Adds the student path to the gradefile
         """
-        if not path.is_dir():
+        if not submission_path.is_dir():
             return
-        sid, _, student_name = path.name.partition(" ")
+        sid, _, student_name = submission_path.name.partition(" ")
         # first time seeing student
-        if sid not in self.data:
-            self.data[sid] = {
-                "full_name": student_name,
-                "files": [],
-                "grade": {},
-                "partners": "",
-                "comments": "",
-                "marked": False
-            }
-            template = json.load(self.template_path.open('r'))
-            for requirement, value in template.items():
-                self.data[sid]["grade"][requirement] = {
-                    "mark": None, "total": value}
-        for file in path.iterdir():
-            self.data[sid]["files"].append(str(file))
+        if sid in self.data:
+            raise ValueError(f"Student {sid} already exists in gradefile")
+
+        # make empty grade object
+        self.data[sid] = {
+            "full_name": student_name,
+            "submission_path": str(submission_path),
+            "grade": {},
+            "partners": "",
+            "comments": "",
+            "marked": False
+        }
+        # add marks
+        template = json.load(self.template_path.open('r'))
+        for requirement, value in template.items():
+            self.data[sid]["grade"][requirement] = {
+                "mark": None, "total": value}
 
     def save(self):
         vprint(f"Saving gradefile to {self.gradefile_path}")
