@@ -15,6 +15,10 @@ class Grades:
         Creates grades object from config
         type config: configparser.ConfigParser()
         """
+        self.grader_path = Paths.get_grader_path(assignment_name)
+        if not self.grader_path.exists():
+            print("ERROR: No grader directory exists. Ensure you run initialization before attempting to mark.\n")
+            raise FileNotFoundError(self.grader_path)
         self.assignment_name = assignment_name
         self.gradefile_path = Paths.get_gradefile_path(assignment_name)
         self.template_path = Paths.get_marking_template_path(assignment_name)
